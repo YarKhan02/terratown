@@ -90,3 +90,49 @@ If a resource already exists in a cloud provider (AWS, Azure, etc.), you can im
 ### Fix Manual Configuration
 
 If someone deletes or modifies the resource manually through ClickOps. Terraform will automatically detect and bring it back to the expecgted state.
+
+## Module Structure
+
+[Module Structure](https://developer.hashicorp.com/terraform/language/v1.15.x/modules/develop/structure)
+
+```
+├── README.md
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── ...
+├── modules/
+│   ├── nestedA/
+│   │   ├── README.md
+│   │   ├── variables.tf
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   ├── nestedB/
+│   ├── .../
+├── examples/
+│   ├── exampleA/
+│   │   ├── main.tf
+│   ├── exampleB/
+│   ├── .../
+```
+
+### Module Sources
+
+[Module Sources](https://developer.hashicorp.com/terraform/language/v1.15.x/modules/configuration)
+
+Using the resource we can import the module from various places e.g
+- Local
+- GitHub
+- Terraform Registry
+
+```
+module "terrahouse" {
+  source = "./modules/terrahouse"
+  user_uuid = var.user_uuid
+  bucket_name = var.bucket_name
+}
+```
+
+### Variable Declaration
+
+We also have to declare variables in the root `variables.tf` file. We don't need to declare them completely with validation, but just simply declare them with type and description. The validation will be done in the module itself.
