@@ -34,7 +34,7 @@ If a resource already exists in a cloud provider (AWS, Azure, etc.), you can im
 1. Define the bucket in your Terraform code
 
     **main.tf**
-    ```
+    ```sh
     resource "aws_s3_bucket" "website_bucket" {
         bucket = var.bucket_name
 
@@ -45,7 +45,7 @@ If a resource already exists in a cloud provider (AWS, Azure, etc.), you can im
     ```
 
     **variables.tf**
-    ```
+    ```sh
     variable "bucket_name" {
         description = "Name of the S3 bucket"
         type        = string
@@ -58,14 +58,14 @@ If a resource already exists in a cloud provider (AWS, Azure, etc.), you can im
     ```
 
     **outputs.tf**
-    ```
+    ```sh
     output "bucket_name" {
         value = aws_s3_bucket.website_bucket.bucket
     }
     ```
 
     **terraform.tfvars**
-    ```
+    ```sh
     bucket_name = "wali-yar-khan-bucket"
     ```
 
@@ -125,7 +125,7 @@ Using the resource we can import the module from various places e.g
 - GitHub
 - Terraform Registry
 
-```
+```sh
 module "terrahouse" {
   source = "./modules/terrahouse"
   user_uuid = var.user_uuid
@@ -136,3 +136,69 @@ module "terrahouse" {
 ### Variable Declaration
 
 We also have to declare variables in the root `variables.tf` file. We don't need to declare them completely with validation, but just simply declare them with type and description. The validation will be done in the module itself.
+
+## S3 Website Hosting
+
+### S3 Bucket Website Configuration
+[Website Configure](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_website_configuration)
+```sh
+resource "aws_s3_bucket_website_configuration" "website_config" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
+}
+```
+
+### S3 Bucket Object Upload
+[Bucket Object](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_object)
+```sh
+resource "aws_s3_object" "object" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "new_object_key"
+  source = "path/to/file"
+
+  etag = filemd5("path/to/file")
+}
+```
+
+**-> etag**
+
+Terraform do not automatically update the object if the file content changes. To force update we can use `etag` argument with `filemd5` cryptographic function.
+
+### Output Website Endpoint
+
+```
+output "website_endpoint" {
+    value = aws_s3_bucket_website_configuration.website_config.website_endpoint
+}
+```
+
+## Working with files
+
+### File exists function
+
+```sh
+variable "index_file_path" {
+  description = "Path to the index.html file for the S3 static website"
+  type        = string
+
+  validation {
+    condition     = can(fileexists(var.index_file_path))
+    error_message = "The file path provided does not exist. Please provide a valid path to index.html."
+  }
+}
+```
+
+### Path Variable
+
+[Special Path Variable]([Website Configure](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_website_configuration))
+
+In terraform there is a special variable called `path` that allows to reference local paths
+- path.module → path to the current module
+- path.root → path to the root module

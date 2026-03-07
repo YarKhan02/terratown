@@ -1,4 +1,9 @@
 output "bucket_name" {
     description = "Bucket name for static website"
-    value = var.terrahouse.bucket_name
+    value = module.terrahouse.bucket_name
+}
+
+output "website_endpoint" {
+    description = "Website endpoint for the S3 bucket"
+    value = module.terrahouse.website_endpoint
 }
