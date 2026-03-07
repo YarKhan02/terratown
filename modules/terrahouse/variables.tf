@@ -18,3 +18,23 @@ variable "bucket_name" {
     error_message = "Bucket name must be 3-63 characters, lowercase letters, numbers, dots or hyphens, and must start and end with a letter or number."
   }
 }
+
+variable "index_file_path" {
+  description = "Path to the index.html file for the S3 static website"
+  type        = string
+
+  validation {
+    condition     = can(fileexists(var.index_file_path))
+    error_message = "The file path provided does not exist. Please provide a valid path to index.html."
+  }
+}
+
+variable "error_file_path" {
+  description = "Path to the error.html file for the S3 static website"
+  type        = string
+
+  validation {
+    condition     = can(fileexists(var.error_file_path))
+    error_message = "The file path provided does not exist. Please provide a valid path to error.html."
+  }
+}
