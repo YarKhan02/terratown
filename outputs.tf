@@ -7,3 +7,8 @@ output "website_endpoint" {
     description = "Website endpoint for the S3 bucket"
     value = module.terrahouse.website_endpoint
 }
+
+output "cloudfront" {
+    description = "CloudFront distribution domain name"
+    value = module.terrahouse.cloudfront
+}

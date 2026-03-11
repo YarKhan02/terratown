@@ -58,3 +58,17 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cloudfront_default_certificate = true
   }
 }
+
+resource "terraform_data" "invalidate_cache" {
+  depends_on = [
+    aws_cloudfront_distribution.s3_distribution
+  ]
+
+  triggers_replace = {
+    content_version = var.content_version
+  }
+
+  provisioner "local-exec" {
+    command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*' --profile terra"
+  }
+}
