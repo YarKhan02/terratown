@@ -257,7 +257,42 @@ For now we are doing `/*` which is a expensive call but in production we can be 
 
 For that we need to setup content version.
 
-We only want it to invalidate the cache when we want it to invalidate, not every time we change the file.
+We only want it to invalidate the cache when the content version changes, not every time we change the file.
+
+```sh
+resource "terraform_data" "invalidate_cache" {
+  triggers_replace = terraform_data.content_version.output
+  provisioner "local-exec" {
+    command = "aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths '/*'"
+  }
+}
+```
+
+**Provision**
+
+[Provisioners](https://developer.hashicorp.com/terraform/language/provisioners)
+
+Proviosioners allows us to execute commands on compute instances e.g AWS CLI commands.
+
+They are not recommended to use by hashicorp because configuration management tool such as Ansible are a better fit but the functionality exists.
+
+**Local Exec**
+
+This will execute command on a machine running the terraform commands e.g plan, apply
+
+```sh
+resource "aws_instance" "web" {
+  # ...
+
+  provisioner "local-exec" {
+    command = "echo The server's IP address is ${self.private_ip}"
+  }
+}
+```
+
+**Remote Exec**
+
+This will execute command on a machine which you target. You will need to provide credentials such as ssh to get into the machine.
 
 ## Lifecycle of Resources
 
