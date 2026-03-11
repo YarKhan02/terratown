@@ -249,6 +249,69 @@ resource "aws_s3_object" "index_html" {
 
 We changed the content type but it is still not working because CloudFront caches the content and does not update it until the cache expires. To fix this we can invalidate the cache.
 
+### Invalidate Cache
+
+When our files changed we need to invalidate the cache so CloudFront can fetch the updated content from S3 bucket. 
+
+For now we are doing `/*` which is a expensive call but in production we can be more specific and invalidate only the changed files.
+
+For that we need to setup content version.
+
+We only want it to invalidate the cache when we want it to invalidate, not every time we change the file.
+
+## Lifecycle of Resources
+
+[Lifecycle of Resources](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle)
+
+The way lifecycle works is that when we run `terraform apply`, it checks the current state of the resources and compares it with the desired state defined in the configuration. If there are any differences, it will determine what actions to take (create, update, delete) based on the lifecycle rules defined for each resource.
+
+```sh
+resource "aws_s3_object" "index_html" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = var.index_file_path
+  content_type = "text/html"
+
+  etag = filemd5(var.index_file_path)
+  lifecycle {
+    ignore_changes = [ etag ]
+  }
+}
+```
+
+We. can use `ignore_changes` to ignore changes to specific attributes of a resource. In this case, we are ignoring changes to the `etag` attribute, which means that if the content of the file changes and the `etag` value changes, Terraform will not consider it as a change and will not trigger an update for the S3 object.
+
+Now we want it to only trigger when content version changes.
+
+We will use `replace_triggered_by` to trigger replacement of the resource when the content version changes.
+
+```sh
+resource "aws_s3_object" "index_html" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = var.index_file_path
+  content_type = "text/html"
+
+  etag = filemd5(var.index_file_path)
+  lifecycle {
+    replace_triggered_by = [ terraform_data.content_version.output ]
+    ignore_changes = [ etag ]
+  }
+}
+```
+
+### Terraform Data
+
+[Terraform Data](https://developer.hashicorp.com/terraform/language/resources/terraform-data)
+
+Plain data values, such as local values and input variables, aren't valid in replace_triggered_by. Because terraform_data resources plan an action each time the input value changes, you can use this resource type to indirectly specify a plain value to trigger replacement.
+
+```
+resource "terraform_data" "content_version" {
+    input = var.content_version
+}
+```
+
 ## Data Sources
 
 [Data Sources](https://developer.hashicorp.com/terraform/plugin/framework/data-sources)
