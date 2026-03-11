@@ -155,6 +155,23 @@ resource "aws_s3_bucket_website_configuration" "website_config" {
 }
 ```
 
+### S3 Object Content Type
+
+When we upload files to S3 bucket, it does not automatically set the content type. So when we try to access the file through CloudFront, it does not render properly because of missing content type and downloads the file instead of rendering it in the browser.
+
+[Content Type](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_object#content_type-1)
+
+```sh
+resource "aws_s3_object" "index_html" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = var.index_file_path
+  content_type = "text/html"
+
+  etag = filemd5(var.index_file_path)
+}
+```
+
 ### S3 Bucket Object Upload
 [Bucket Object](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_object)
 ```sh
@@ -202,3 +219,97 @@ variable "index_file_path" {
 In terraform there is a special variable called `path` that allows to reference local paths
 - path.module → path to the current module
 - path.root → path to the root module
+
+## CDN (Content Dilevery Network)
+
+[CDN](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution#example-usage)
+
+[Origin Access Control](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_origin_access_control)
+
+[S3 Bucket Policy](https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-cloudfront-introduces-origin-access-control-oac/)
+
+### Content Type Issue
+
+When we upload files to S3 bucket, it does not automatically set the content type. So when we try to access the file through CloudFront, it does not render properly because of missing content type and downloads the file instead of rendering it in the browser.
+
+[Content Type](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_object#content_type-1)
+
+![Distribution Domain Name](image.png)
+
+```sh
+resource "aws_s3_object" "index_html" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = var.index_file_path
+  content_type = "text/html"
+
+  etag = filemd5(var.index_file_path)
+}
+```
+
+We changed the content type but it is still not working because CloudFront caches the content and does not update it until the cache expires. To fix this we can invalidate the cache.
+
+## Data Sources
+
+[Data Sources](https://developer.hashicorp.com/terraform/plugin/framework/data-sources)
+[Data Sources](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/arn)
+
+A data block requests that Terraform read from a given data source ("aws_ami") and export the result under the given local name. The source is actually AWS account.
+
+This allows use to source data from cloud resources.
+
+This is helpful when we want to refernce them without importing.
+
+```sh
+data "aws_caller_identity" "current" {}
+```
+
+## Locals
+
+Locals allows us to define local values.
+
+```sh
+locals {
+    s3_origin_id = "S3-${aws_s3_bucket.website_bucket.id}"
+}
+```
+
+## Caller Identity
+
+[Caller Identity](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity)
+
+```sh
+data "aws_caller_identity" "current" {}
+```
+
+## Working With JSON
+
+[jsonencode](https://developer.hashicorp.com/terraform/language/functions/jsonencode)
+
+```sh
+resource "aws_s3_bucket_policy" "bucket_policy" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  policy = jsonencode(
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "AllowCloudFrontServicePrincipalReadOnly",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "cloudfront.amazonaws.com"
+                },
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::${aws_s3_bucket.website_bucket.id}/*",
+                "Condition": {
+                    "StringEquals": {
+                        # We can also just use this
+                        # "AWS:SourceArn": data.aws_cloudfront_distribution.s3_distribution.arn
+                        "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.s3_distribution.id}"
+                    }
+                }
+            }
+        ]
+    })
+}
+```
