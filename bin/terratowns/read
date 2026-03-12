@@ -1,4 +1,4 @@
-#! /usr/bin/bash
+#!/usr/bin/env bash
 
 # Check if a UUID is provided
 if [ "$#" -ne 1 ]; then
