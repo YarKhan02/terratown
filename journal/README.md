@@ -411,3 +411,13 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
     })
 }
 ```
+
+## Fileset
+
+To upload multiple files to S3 bucket we can use `fileset` function to get a list of files in a directory and then use `for_each` to upload them to S3 bucket.
+
+[Fileset](https://developer.hashicorp.com/terraform/language/functions/fileset)
+
+```sh
+fileset(path, pattern)
+```

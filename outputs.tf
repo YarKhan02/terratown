@@ -8,7 +8,7 @@ output "website_endpoint" {
     value = module.terrahouse.website_endpoint
 }
 
-output "cloudfront" {
+output "cloudfront_url" {
     description = "CloudFront distribution domain name"
-    value = module.terrahouse.cloudfront
+    value = module.terrahouse.cloudfront_url
 }
