@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Get the directory where the script is located
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+echo "$PROJECT_ROOT"
+cd "$PROJECT_ROOT/terraform-provider-terratowns"
+cp "$PROJECT_ROOT/.terraformrc" /Users/yarkhan/.terraformrc
+rm -rf /Users/yarkhan/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64
+rm -rf "$PROJECT_ROOT/.terraform"
+rm -rf "$PROJECT_ROOT/.terraform.lock.hcl"
+go mod tidy
+go build -o terraform-provider-terratowns_v1.0.0
+mkdir -p ~/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64/
+cp terraform-provider-terratowns_v1.0.0 ~/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64/

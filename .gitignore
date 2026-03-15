@@ -34,3 +34,6 @@ override.tf.json
 terraform.rc
 
 .DS_Store
+
+terraform-provider-terratowns/terraform-provider-terratowns_v1.0.0
+terraform-provider-terratowns/terratowns-provider
