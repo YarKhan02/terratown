@@ -1,3 +1,7 @@
+variable "terratowns_endpoint" {
+  type        = string
+}
+
 variable "user_uuid" {
   type        = string
 }
