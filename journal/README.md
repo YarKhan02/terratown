@@ -421,3 +421,47 @@ To upload multiple files to S3 bucket we can use `fileset` function to get a lis
 ```sh
 fileset(path, pattern)
 ```
+
+## Custom Provider
+
+When we create custom provider, we have to put the binary in the `~/.terraform.d/plugins` directory and then we can reference it in our terraform configuration.
+
+The path to put the custom provider binary executable: 
+
+```sh
+/Users/yarkhan/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64
+```
+
+The script to build the provider and move it to the correct directory:
+
+```sh
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Get the directory where the script is located
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+echo "$PROJECT_ROOT"
+cd "$PROJECT_ROOT/terraform-provider-terratowns"
+cp "$PROJECT_ROOT/.terraformrc" /Users/yarkhan/.terraformrc
+rm -rf /Users/yarkhan/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64
+rm -rf "$PROJECT_ROOT/.terraform"
+rm -rf "$PROJECT_ROOT/.terraform.lock.hcl"
+go mod tidy
+go build -o terraform-provider-terratowns_v1.0.0
+mkdir -p ~/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64/
+cp terraform-provider-terratowns_v1.0.0 ~/.terraform.d/plugins/local.providers/local/terratowns/1.0.0/darwin_arm64/
+```
+
+Then we can reference the provider in our terraform configuration:
+
+```sh
+terraform {
+  required_providers {
+    terratowns = {
+      source = "local.providers/local/terratowns"
+      version = "1.0.0"
+    }
+  }
+}
+```
