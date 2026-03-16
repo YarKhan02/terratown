@@ -16,9 +16,9 @@ terraform {
 }
 
 provider "terratowns" {
-  endpoint = "http://localhost:4567"
-  user_uuid = "e328f4ab-b99f-421c-84c9-4ccea042c7d1"
-  token = "9b49b3fb-b8e9-483c-b703-97ba88eef8e0"
+  endpoint = var.terratowns_endpoint
+  user_uuid = var.user_uuid
+  token = "509df6e8-7950-49c3-b980-9e041b958bfb"
 }
 
 module "terrahouse" {
@@ -29,4 +29,12 @@ module "terrahouse" {
   error_file_path = var.error_file_path
   content_version = var.content_version
   assets_path = var.assets_path
+}
+
+resource "terratowns_home" "home" {
+  name = "How to play acranum in 2023"
+  description = "Acranum is a game from 2001"
+  domain_name = "3fdq3gz.cloudfront.net"
+  town = "missingo"
+  content_version = "1"
 }
